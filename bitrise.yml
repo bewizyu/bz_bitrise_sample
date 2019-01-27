@@ -1,0 +1,229 @@
+---
+format_version: '6'
+default_step_lib_source: https://github.com/bitrise-io/bitrise-steplib.git
+project_type: flutter
+trigger_map:
+  - push_branch: develop
+    workflow: staging
+  - push_branch: master
+    workflow: prod
+  - pull_request_source_branch: "*"
+    workflow: pull-request
+    pull_request_target_branch: develop
+  - pull_request_source_branch: develop
+    pull_request_target_branch: master
+    workflow: pull-request
+  - pull_request_target_branch: master
+    workflow: unauthorize
+workflows:
+  staging:
+    steps:
+      - activate-ssh-key@4.0.3:
+          run_if: '{{getenv "SSH_RSA_PRIVATE_KEY" | ne ""}}'
+      - git-clone@4.0.14: {}
+      - script@1.1.5:
+          title: Do anything with Script step
+      - file-downloader@1.0.1:
+          inputs:
+            - destination: "$HOME/keystores/prod.jks"
+            - source: "$BITRISEIO_ANDROID_KEYSTORE_URL"
+      - certificate-and-profile-installer@1.10.1: {}
+      - flutter-installer@0.9.2: {}
+      - flutter-analyze@0.1.0:
+          inputs:
+            - project_location: "$BITRISE_FLUTTER_PROJECT_LOCATION"
+      - flutter-test@0.9.1:
+          inputs:
+            - additional_params: "--coverage"
+            - project_location: "$BITRISE_FLUTTER_PROJECT_LOCATION"
+      - flutter-build@0.9.2:
+          inputs:
+            - project_location: "$BITRISE_FLUTTER_PROJECT_LOCATION"
+            - android_additional_params: "--release --flavor staging -t lib/main_staging.dart"
+            - ios_additional_params: "--release --flavor staging -t lib/main_staging.dart -v"
+            - ios_codesign_identity: ''
+      - xcode-archive@2.4.19:
+          inputs:
+            - project_path: "$BITRISE_PROJECT_PATH"
+            - export_method: "$BITRISE_EXPORT_METHOD"
+            - force_provisioning_profile: ''
+            - force_team_id: ''
+            - force_code_sign_identity: ''
+            - force_provisioning_profile_specifier: ''
+            - custom_export_options_plist_content: "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<!DOCTYPE
+            plist PUBLIC \"-//Apple//DTD PLIST 1.0//EN\" \"http://www.apple.com/DTDs/PropertyList-1.0.dtd\">\n<plist
+            version=\"1.0\">\n<dict>\n\t<key>compileBitcode</key>\n\t<false/>\n\t<key>destination</key>\n\t<string>export</string>\n\t<key>method</key>\n\t<string>ad-hoc</string>\n\t<key>provisioningProfiles</key>\n\t<dict>\n\t\t<key>com.bewizyu.bitrise.staging</key>\n\t\t<string>Wild
+            Card Ad-Hoc Distribution</string>\n\t</dict>\n\t<key>signingCertificate</key>\n\t<string>iPhone
+            Distribution</string>\n\t<key>signingStyle</key>\n\t<string>manual</string>\n\t<key>stripSwiftSymbols</key>\n\t<true/>\n\t<key>teamID</key>\n\t<string>CU7M5VQDU5</string>\n\t<key>thinning</key>\n\t<string>&lt;none&gt;</string>\n</dict>\n</plist>"
+            - configuration: Release-staging
+      - deploy-to-bitrise-io@1.3.19: {}
+      - github-status@2.2.2:
+          inputs:
+            - auth_token: "$GITHUB_STATUS_TOKEN"
+    envs:
+      - opts:
+          is_expand: false
+        BITRISE_SCHEME: staging
+      - opts:
+          is_expand: false
+        BITRISE_EXPORT_METHOD: ad-hoc
+  pull-request:
+    steps:
+      - activate-ssh-key@4.0.3:
+          run_if: '{{getenv "SSH_RSA_PRIVATE_KEY" | ne ""}}'
+      - git-clone@4.0.14: {}
+      - script@1.1.5:
+          title: Do anything with Script step
+      - file-downloader@1.0.1:
+          inputs:
+            - destination: "$HOME/keystores/prod.jks"
+            - source: "$BITRISEIO_ANDROID_KEYSTORE_URL"
+      - certificate-and-profile-installer@1.10.1: {}
+      - flutter-installer@0.9.2: {}
+      - flutter-analyze@0.1.0:
+          inputs:
+            - project_location: "$BITRISE_FLUTTER_PROJECT_LOCATION"
+      - flutter-test@0.9.1:
+          inputs:
+            - additional_params: "--coverage"
+            - project_location: "$BITRISE_FLUTTER_PROJECT_LOCATION"
+      - codecov@1.1.5:
+          inputs:
+            - CODECOV_TOKEN: "$CODECOV_TOKEN"
+      - flutter-build@0.9.2:
+          inputs:
+            - project_location: "$BITRISE_FLUTTER_PROJECT_LOCATION"
+            - android_additional_params: "--release --flavor staging -t lib/main_staging.dart"
+            - ios_additional_params: "--release --flavor staging -t lib/main_staging.dart"
+            - platform: both
+      - xcode-archive@2.4.19:
+          inputs:
+            - project_path: "$BITRISE_PROJECT_PATH"
+            - export_method: "$BITRISE_EXPORT_METHOD"
+            - force_provisioning_profile: ''
+            - force_team_id: ''
+            - force_code_sign_identity: ''
+            - force_provisioning_profile_specifier: ''
+            - custom_export_options_plist_content: "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<!DOCTYPE
+            plist PUBLIC \"-//Apple//DTD PLIST 1.0//EN\" \"http://www.apple.com/DTDs/PropertyList-1.0.dtd\">\n<plist
+            version=\"1.0\">\n<dict>\n\t<key>compileBitcode</key>\n\t<false/>\n\t<key>destination</key>\n\t<string>export</string>\n\t<key>method</key>\n\t<string>ad-hoc</string>\n\t<key>provisioningProfiles</key>\n\t<dict>\n\t\t<key>com.bewizyu.bitrise.staging</key>\n\t\t<string>Wild
+            Card Ad-Hoc Distribution</string>\n\t</dict>\n\t<key>signingCertificate</key>\n\t<string>iPhone
+            Distribution</string>\n\t<key>signingStyle</key>\n\t<string>manual</string>\n\t<key>stripSwiftSymbols</key>\n\t<true/>\n\t<key>teamID</key>\n\t<string>CU7M5VQDU5</string>\n\t<key>thinning</key>\n\t<string>&lt;none&gt;</string>\n</dict>\n</plist>"
+            - upload_bitcode: 'no'
+            - configuration: Release-staging
+      - github-status@2.2.2:
+          inputs:
+            - auth_token: "$GITHUB_STATUS_TOKEN"
+    envs:
+      - opts:
+          is_expand: false
+        BITRISE_SCHEME: staging
+      - opts:
+          is_expand: false
+        BITRISE_EXPORT_METHOD: ad-hoc
+  prod:
+    steps:
+      - activate-ssh-key@4.0.3:
+          run_if: '{{getenv "SSH_RSA_PRIVATE_KEY" | ne ""}}'
+      - git-clone@4.0.14: {}
+      - script@1.1.5:
+          title: Do anything with Script step
+      - certificate-and-profile-installer@1.10.1: {}
+      - flutter-installer@0.9.2: {}
+      - flutter-analyze@0.1.0:
+          inputs:
+            - project_location: "$BITRISE_FLUTTER_PROJECT_LOCATION"
+      - flutter-test@0.9.1:
+          inputs:
+            - project_location: "$BITRISE_FLUTTER_PROJECT_LOCATION"
+      - flutter-build@0.9.1:
+          inputs:
+            - project_location: "$BITRISE_FLUTTER_PROJECT_LOCATION"
+            - platform: both
+      - xcode-archive@2.4.19:
+          inputs:
+            - project_path: "$BITRISE_PROJECT_PATH"
+            - scheme: "$BITRISE_SCHEME"
+            - export_method: "$BITRISE_EXPORT_METHOD"
+            - configuration: Release
+      - deploy-to-bitrise-io@1.3.19: {}
+    envs:
+      - opts:
+          is_expand: false
+        BITRISE_SCHEME: prod
+      - opts:
+          is_expand: false
+        BITRISE_EXPORT_METHOD: ad-hoc
+  unauthorize:
+    steps:
+      - script@1.1.5:
+          title: Do anything with Script step
+          inputs:
+            - content: |
+                #!/usr/bin/env bash
+                # fail if any commands fails
+                set -e
+                # debug log
+                set -x
+
+                # write your script here
+                echo "this script throws an error"
+                exit 1
+    envs:
+      - opts:
+          is_expand: false
+        BITRISE_SCHEME: prod
+      - opts:
+          is_expand: false
+        BITRISE_EXPORT_METHOD: ad-hoc
+  SUPPORT_staging:
+    steps:
+      - activate-ssh-key@4.0.3:
+          run_if: '{{getenv "SSH_RSA_PRIVATE_KEY" | ne ""}}'
+      - git-clone@4.0.14: {}
+      - file-downloader@1.0.1:
+          inputs:
+            - destination: "$HOME/keystores/prod.jks"
+            - source: "$BITRISEIO_ANDROID_KEYSTORE_URL"
+      - certificate-and-profile-installer@1.10.1: {}
+      - flutter-installer@0.9.2: {}
+      - flutter-test@0.9.1:
+          inputs:
+            - additional_params: "--coverage"
+            - project_location: "$BITRISE_FLUTTER_PROJECT_LOCATION"
+      - flutter-build@0.9.2:
+          inputs:
+            - project_location: "$BITRISE_FLUTTER_PROJECT_LOCATION"
+            - android_additional_params: "--release --flavor staging -t lib/main_staging.dart"
+            - ios_additional_params: "--release --flavor staging -t lib/main_staging.dart
+            -v"
+            - ios_codesign_identity: ''
+      - xcode-archive@2.4.20:
+          inputs:
+            - project_path: "$BITRISE_PROJECT_PATH"
+            - export_method: "$BITRISE_EXPORT_METHOD"
+            - force_provisioning_profile: ''
+            - force_team_id: ''
+            - force_code_sign_identity: ''
+            - force_provisioning_profile_specifier: ''
+            - custom_export_options_plist_content: "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<!DOCTYPE
+            plist PUBLIC \"-//Apple//DTD PLIST 1.0//EN\" \"http://www.apple.com/DTDs/PropertyList-1.0.dtd\">\n<plist
+            version=\"1.0\">\n<dict>\n\t<key>compileBitcode</key>\n\t<false/>\n\t<key>destination</key>\n\t<string>export</string>\n\t<key>method</key>\n\t<string>ad-hoc</string>\n\t<key>provisioningProfiles</key>\n\t<dict>\n\t\t<key>com.bewizyu.bitrise.staging</key>\n\t\t<string>Wild
+            Card Ad-Hoc Distribution</string>\n\t</dict>\n\t<key>signingCertificate</key>\n\t<string>iPhone
+            Distribution</string>\n\t<key>signingStyle</key>\n\t<string>manual</string>\n\t<key>stripSwiftSymbols</key>\n\t<true/>\n\t<key>teamID</key>\n\t<string>CU7M5VQDU5</string>\n\t<key>thinning</key>\n\t<string>&lt;none&gt;</string>\n</dict>\n</plist>"
+            - configuration: Release-staging
+    envs:
+      - opts:
+          is_expand: false
+        BITRISE_SCHEME: staging
+      - opts:
+          is_expand: false
+        BITRISE_EXPORT_METHOD: ad-hoc
+app:
+  envs:
+    - opts:
+        is_expand: false
+      BITRISE_FLUTTER_PROJECT_LOCATION: "."
+    - opts:
+        is_expand: false
+      BITRISE_PROJECT_PATH: ios/Runner.xcworkspace

@@ -1,0 +1,15 @@
+//
+//  prod.xcconfig
+//  Runner
+//
+//  Created by Nicolas Hodicq on 27/01/2019.
+//  Copyright © 2019 The Chromium Authors. All rights reserved.
+//
+
+#include "Pods/Target Support Files/Pods-Runner/Pods-Runner.debug.xcconfig"
+#include "Generated.xcconfig"
+
+FLUTTER_TARGET=lib/main.dart
+
+bz_bundle = com.bewizyu.bitrise
+bz_bundle_name = Bz Bitrise

@@ -9,7 +9,7 @@
 #include "Pods/Target Support Files/Pods-Runner/Pods-Runner.debug.xcconfig"
 #include "Generated.xcconfig"
 
-FLUTTER_TARGET=lib/main.dart
+FLUTTER_TARGET=lib/main_staging.dart
 
 bz_bundle = com.bewizyu.bitrise.staging
 bz_bundle_name = Bz Bitrise Staging

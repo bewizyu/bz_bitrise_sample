@@ -1,1 +1,4 @@
 #include "Generated.xcconfig"
+
+bz_bundle = com.bewizyu.bitrise.staging
+bz_bundle_name = Bz Bitrise Staging
